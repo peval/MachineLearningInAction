@@ -16,3 +16,10 @@ KNN算法采用 **测量不同特征值之间的距离** 进行分类。
 
 ___
 # code 说明
+
+### 参考
+Numpy使用教程
+
+http://old.sebug.net/paper/books/scipydoc/numpy_intro.html
+
+https://docs.scipy.org/doc/numpy/reference/
