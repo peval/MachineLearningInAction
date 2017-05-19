@@ -18,8 +18,9 @@ ___
 # code 说明
 
 ### 参考
-Numpy使用教程
+[Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
+[Numpy使用英文教程](https://docs.scipy.org/doc/numpy/reference/)
 
-http://old.sebug.net/paper/books/scipydoc/numpy_intro.html
 
-https://docs.scipy.org/doc/numpy/reference/
+
+
