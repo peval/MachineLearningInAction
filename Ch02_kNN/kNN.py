@@ -172,27 +172,47 @@ def classifyPersion():
     
     
     
+
+def img2vector(filename):
+    '''
+    图像转换成向量的函数img2vector：该函数创建1*1024的Numpy数组，然后打开给定文件，循环读取文件的前32行>，并将每行的头32个字符存储在Numpy数组中，最后返回数组。
+    '''
+    returnVect = np.zeros((1,1024))
+    with open(filename, 'r') as fp:
+        index = 0
+        for line in fp.readlines():
+            line = line.strip()
+            for i in range(32):
+                returnVect[0,index*32+i] = int(line[i])
+            index +=1
+    return returnVect
+        
+    
+    
+    
 if __name__ == "__main__":
     
     dataSet, lables = createDataset()
     inX = [0, 0]
     #print classify0(inX, dataSet, lables, 3)
     
-    datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
-    print datingDataMat
-    print datingLabels[0:20]
+    #datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
+    #print datingDataMat
+    #print datingLabels[0:20]
     
-    datingClassTest()
+    #datingClassTest()
     
     #classifyPersion()
     
     
     
 
-    import matplotlib.pyplot as plt
+    #import matplotlib.pyplot as plt
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(datingDataMat[:,1], datingDataMat[:,2], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
-    plt.show()
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+    #ax.scatter(datingDataMat[:,1], datingDataMat[:,2], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
+    #plt.show()
+    
+    print img2vector('trainingDigits/8_60.txt')
 

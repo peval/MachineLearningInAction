@@ -205,7 +205,37 @@ You will probably like this person:  in small doses
 ```
 
 
-### 2.1.6 准备数据： 归一化数值
+## 2.2 案例二、 手写识别系统
+构造使用Knn分类算法的手写识别系统，为了简单起见，系统只能识别0-9的数字。另外需要识别的数字已使用图形处理软件，处理成具有相同的色彩和大小：32 * 32 像素的黑白图像，同时采用文本格式存储图像（浪费存储空间）.
+
+### 2.2.1 准备数据：将图像转换成测试向量
+目录trainingDigits中包含大约2000个例子，每个数字大约200个样本，作业训练样本；
+
+目录testDigis中包含大约900个测试数据，用于检验训练样本产生的模型的正确率。两组数据没有重叠。
+![手写数字样本例子](手写数字样本例子.png)
+
+为了直接使用前面的分类器，我们将图像格式化处理为一个向量（32*32的二进制图像矩阵转换为1*1024的向量）。
+先编写将图像转换成向量的函数img2vector：该函数创建1*1024的Numpy数组，然后打开给定文件，循环读取文件的前32行，并将每行的头32个字符存储在Numpy数组中，最后返回数组。
+```python
+def img2vector(filename):
+    '''
+    图像转换成向量的函数img2vector：该函数创建1*1024的Numpy数组，然后打开给定文件，循环读取文件的前32行>，并将每行的头32个字符存储在Numpy数组中，最后返回数组。
+    '''
+    returnVect = np.zeros((1,1024))
+    with open(filename, 'r') as fp:
+        index = 0
+        for line in fp.readlines():
+            line = line.strip()
+            for i in range(32):
+                returnVect[0,index*32+i] = int(line[i])
+            index +=1
+    return returnVect
+```
+
+
+
+
+
 
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
