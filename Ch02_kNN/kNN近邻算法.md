@@ -1,6 +1,6 @@
 第2章 K-近邻算法（KNN）
 ==================
-# 工作原理与流程：
+# 1 工作原理与流程：
 KNN算法采用 **测量不同特征值之间的距离** 进行分类。
 
 - 准备训练样本集，要求每条记录都打好标签（提前分好类）；
@@ -15,8 +15,8 @@ KNN算法采用 **测量不同特征值之间的距离** 进行分类。
 **适用数据范围**：数值型与标称型。
 
 ___
-# 案例说明
-## 案例一、约会预测
+# 2 案例说明
+## 2.1 案例一、约会预测
 海伦共收集约会网站上1000条数据，其中每个数据包含3种特征
 - 每年获得的飞行里程数
 - 玩视频游戏所花费时间百分比
@@ -29,7 +29,7 @@ ___
 - 魅力一般的人
 - 极具魅力的人
 
-### 从文本中读取并解析数据
+### 2.1.1 从文本中读取并解析数据
 ```python
 def file2matrix(filename):
     '''
@@ -56,24 +56,50 @@ def file2matrix(filename):
 ```
 代码中并没有显示的将文件中的字符串转换成二组数组中的int或float，而是通过zeros初始化一个数组，并指定数值类型。由numpy在内部进行类型转化。
 
-### 从文本中读取并解析数据
+测试文件解析
 ```python
-    datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
-    print datingDataMat
-    print datingLabels[0:20]
-    
-输出
-    [[  4.09200000e+04   8.32697600e+00   9.53952000e-01]
-    [  1.44880000e+04   7.15346900e+00   1.67390400e+00]
-    [  2.60520000e+04   1.44187100e+00   8.05124000e-01]
-    ..., 
-    [  2.65750000e+04   1.06501020e+01   8.66627000e-01]
-    [  4.81110000e+04   9.13452800e+00   7.28045000e-01]
-    [  4.37570000e+04   7.88260100e+00   1.33244600e+00]]
+>>> datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
+>>> datingDataMat
+    array([[  4.09200000e+04,   8.32697600e+00,   9.53952000e-01],
+        [  1.44880000e+04,   7.15346900e+00,   1.67390400e+00],
+        [  2.60520000e+04,   1.44187100e+00,   8.05124000e-01],
+        ..., 
+        [  2.65750000e+04,   1.06501020e+01,   8.66627000e-01],
+        [  4.81110000e+04,   9.13452800e+00,   7.28045000e-01],
+        [  4.37570000e+04,   7.88260100e+00,   1.33244600e+00]])
+>>> datingDataMat.dtype
+    dtype('float64')
+>>> datingDataMat.shape
+    (1000, 3)
+>>> datingLabels[0:20]
     [2, 1, 0, 0, 0, 0, 2, 2, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2]
 
 ```
 
+### 2.1.2 分析数据: 使用Matplotlib创建散点图
+```python
+    import matplotlib.pyplot as plt
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(datingDataMat[:,1], datingDataMat[:,2], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
+    plt.show()
+```
+游戏时间与冰淇淋 两维度的输出图像
+![游戏时间与冰淇淋 两维度的输出图像]
+(https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+
+```python
+    import matplotlib.pyplot as plt
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(datingDataMat[:,0], datingDataMat[:,1], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
+    plt.show()
+```
+飞行里程与游戏时间 两维度的输出图像
+![飞行里程与游戏时间 两维度的输出图像]
+(https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
 
