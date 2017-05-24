@@ -182,7 +182,7 @@ if __name__ == "__main__":
     print datingDataMat
     print datingLabels[0:20]
     
-    #datingClassTest()
+    datingClassTest()
     
     #classifyPersion()
     
