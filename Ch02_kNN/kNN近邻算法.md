@@ -77,6 +77,8 @@ def file2matrix(filename):
 ```
 
 ### 2.1.2 分析数据: 使用Matplotlib创建散点图
+
+游戏时间与冰淇淋 两维度的输出图像
 ```python
     import matplotlib.pyplot as plt
     
@@ -85,9 +87,9 @@ def file2matrix(filename):
     ax.scatter(datingDataMat[:,1], datingDataMat[:,2], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
     plt.show()
 ```
-游戏时间与冰淇淋 两维度的输出图像
 ![游戏时间与冰淇淋 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 
+飞行里程与游戏时间 两维度的输出图像
 ```python
     import matplotlib.pyplot as plt
     
@@ -96,8 +98,38 @@ def file2matrix(filename):
     ax.scatter(datingDataMat[:,0], datingDataMat[:,1], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
     plt.show()
 ```
-飞行里程与游戏时间 两维度的输出图像
+
 ![飞行里程与游戏时间 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+
+对比第一张图，第二张图明显可以进行类型区别。说明飞行里程与游戏时间这两个特征对于分类效果更好。
+
+### 2.1.3 准备数据： 归一化数值
+选取如下4个样本
+ id | 每年获得的飞行里程数 | 玩视频游戏所花费时间百分比 | 每周消费的冰淇淋公升数 | 样本分类 
+ --- | ---------------- | --------------------  | ------------------- | ------
+ 1   |     400          |      0.8              |       0.5           |   1
+ 2   |     134 000      |      12               |       0.9           |   3
+ 3   |     20 000       |      0                |       1.1           |   2
+ 4   |     32 000       |      67               |       0.1           |   2
+ 
+ 当计算样本3与样本4之间的距离时
+ ![距离]()
+很容易看出，上面方程中数字差值最大的属性对计算结果影响最大。也就是说每年获得的飞行里程数对结果影响最大，为了保证三个特征的权重相同，可以先将数值归一化，都转换到0到1或-1到1之间
+```
+    newvalue = (oldvalue - mim) / (max - mim)
+    其中mim与max分别是数据集中的最小特征值和最大特征值。
+```
+因此我们定义一个归一化函数autoNorm()
+
+
+
+- 每年获得的飞行里程数
+- 玩视频游戏所花费时间百分比
+- 每周消费的冰淇淋公升数
+### 2.1.3 准备数据： 归一化数值
+### 2.1.3 准备数据： 归一化数值
+### 2.1.3 准备数据： 归一化数值
+
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
 
