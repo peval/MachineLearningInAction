@@ -54,7 +54,25 @@ def file2matrix(filename):
             
     return returnMat , returnLabel
 ```
+代码中并没有显示的将文件中的字符串转换成二组数组中的int或float，而是通过zeros初始化一个数组，并指定数值类型。由numpy在内部进行类型转化。
 
+### 从文本中读取并解析数据
+```python
+    datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
+    print datingDataMat
+    print datingLabels[0:20]
+    
+输出
+    [[  4.09200000e+04   8.32697600e+00   9.53952000e-01]
+    [  1.44880000e+04   7.15346900e+00   1.67390400e+00]
+    [  2.60520000e+04   1.44187100e+00   8.05124000e-01]
+    ..., 
+    [  2.65750000e+04   1.06501020e+01   8.66627000e-01]
+    [  4.81110000e+04   9.13452800e+00   7.28045000e-01]
+    [  4.37570000e+04   7.88260100e+00   1.33244600e+00]]
+    [2, 1, 0, 0, 0, 0, 2, 2, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2]
+
+```
 
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
