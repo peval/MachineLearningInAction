@@ -86,8 +86,7 @@ def file2matrix(filename):
     plt.show()
 ```
 游戏时间与冰淇淋 两维度的输出图像
-![游戏时间与冰淇淋 两维度的输出图像]
-(https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+![游戏时间与冰淇淋 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 
 ```python
     import matplotlib.pyplot as plt
@@ -98,8 +97,7 @@ def file2matrix(filename):
     plt.show()
 ```
 飞行里程与游戏时间 两维度的输出图像
-![飞行里程与游戏时间 两维度的输出图像]
-(https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+![飞行里程与游戏时间 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
 
