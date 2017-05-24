@@ -87,7 +87,7 @@ def file2matrix(filename):
     ax.scatter(datingDataMat[:,1], datingDataMat[:,2], 15.0*np.array(datingLabels), 15.0*np.array(datingLabels))
     plt.show()
 ```
-![游戏时间与冰淇淋 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+![游戏时间与冰淇淋 两维度的输出图像](%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%E4%B8%8E%E5%86%B0%E6%B7%87%E6%B7%8B%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 
 飞行里程与游戏时间 两维度的输出图像
 ```python
@@ -99,7 +99,7 @@ def file2matrix(filename):
     plt.show()
 ```
 
-![飞行里程与游戏时间 两维度的输出图像](https://github.com/peval/MachineLearningInAction/blob/master/Ch02_kNN/%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
+![飞行里程与游戏时间 两维度的输出图像](%E9%A3%9E%E8%A1%8C%E9%87%8C%E7%A8%8B%E4%B8%8E%E6%B8%B8%E6%88%8F%E6%97%B6%E9%97%B4%20%E4%B8%A4%E7%BB%B4%E5%BA%A6.png)
 
 对比第一张图，第二张图明显可以进行类型区别。说明飞行里程与游戏时间这两个特征对于分类效果更好。
 
@@ -114,7 +114,7 @@ def file2matrix(filename):
  
  当计算样本3与样本4之间的距离时
  
- ![距离]()
+ ![距离](算距离.png)
  
 很容易看出，上面方程中数字差值最大的属性对计算结果影响最大。也就是说每年获得的飞行里程数对结果影响最大，为了保证三个特征的权重相同，可以先将数值归一化，都转换到0到1或-1到1之间
 ```
