@@ -37,7 +37,7 @@ def file2matrix(filename):
     '''
     returnMat = []
     returnLabel = []
-    lable = {'didntLike':0, 'smallDoses':1, 'largeDoses':2}
+    lable = {'didntLike':1, 'smallDoses':2, 'largeDoses':3}
     with open(filename, 'r') as fp:
         lines = fp.readlines()
         returnMat = np.zeros((len(lines), 3)) #定义一个(len(lines), 3) 2维数组并填充0
@@ -113,22 +113,99 @@ def file2matrix(filename):
  4   |     32 000       |      67               |       0.1           |   2
  
  当计算样本3与样本4之间的距离时
+ 
  ![距离]()
+ 
 很容易看出，上面方程中数字差值最大的属性对计算结果影响最大。也就是说每年获得的飞行里程数对结果影响最大，为了保证三个特征的权重相同，可以先将数值归一化，都转换到0到1或-1到1之间
 ```
     newvalue = (oldvalue - mim) / (max - mim)
     其中mim与max分别是数据集中的最小特征值和最大特征值。
 ```
 因此我们定义一个归一化函数autoNorm()
+```python
+def autoNorm(dataSet):
+    '''
+    针对样本数据归一化，减小不同属性数据单位不一致，导致权重问题
+    '''
+    mimVal = dataSet.min(0) 每列的最小值
+    maxVal = dataSet.max(0) 每列的最大值
+    ranges = maxVal - mimVal
+    normDataSet = np.zeros(dataSet.shape)
+    
+    normDataSet = dataSet - np.tile(mimVal, (dataSet.shape[0], 1))
+    normDataSet = normDataSet / np.tile(ranges, (dataSet.shape[0], 1))
+    
+    
+    return normDataSet, ranges, mimVal, maxVal
+```
+
+### 2.1.4 测试算法： 验证算法的正确率
+机器学习算法一个重要工作就是评估算法的正确率，通常我们只提供已有数据的90%作为训练样本来训练分类器，而使用其余的10%数据去测试分类器的正确率。** 错误率 **就是分类器给出错误结果的次数除以测试数据的总数，完美的分类器错误率为0，而错误率的1的分类器不会给出任何正确的分类结果。
+```python
+def datingClassTest():
+    '''
+    测试约会KNN算法在此样本下的正确率。使用90%的总样本作为训练样本，其余10%用于评估算法的正确率
+    '''
+    hoRatio = 0.05
+    datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
+    datingDataMat, ranges, mimVal, maxVal = autoNorm(datingDataMat)
+    numTestVecs = int(hoRatio * datingDataMat.shape[0])
+    errorCount = 0.0
+    
+    for i in range(numTestVecs):
+        classifyResultLabel = classify0(datingDataMat[i,:], datingDataMat[numTestVecs:datingDataMat.shape[0],:], datingLabels[numTestVecs:datingDataMat.shape[0]], 10)
+        print 'the classify came back with: %d, the real answer is : %d' % (classifyResultLabel, datingLabels[i])
+        if (classifyResultLabel != datingLabels[i]) : errorCount += 1.0
+    print 'the total error rate is : %f' % (errorCount/float(numTestVecs))
+    
+    
+>>> datingClassTest()
+the classify came back with: 3, the real answer is : 3
+the classify came back with: 2, the real answer is : 2
+the classify came back with: 1, the real answer is : 1
+the classify came back with: 1, the real answer is : 1
+....
+the classify came back with: 1, the real answer is : 1
+the classify came back with: 1, the real answer is : 1
+the classify came back with: 1, the real answer is : 1
+the classify came back with: 2, the real answer is : 2
+the total error rate is : 0.020000  错误率为2%
+```
+可通过调整 hoRatio检测样本占有率 和 变量k ，查看最终错误率的变化情况。
 
 
+### 2.1.5 使用算法： 构建完整可用的系统
+输入想要测试者的特征，使用knn计算分类结果
+```python
+def classifyPersion():
+    '''
+    命令行输入待预测的数据，输出预测结果。
+    '''
+    resultList = ['not at all', 'in small doses', 'in large doses']
+    
+    percentTats = float(raw_input('percentage of time spent playing video games?'))
+    ffMiles = float(raw_input('frequent flier miles earned per year?'))
+    iceCream = float(raw_input('liters of ice cream consumed per year?'))
+    
+    datingDataMat , datingLabels = file2matrix("datingTestSet.txt")
+    datingDataMat, ranges, mimVal, maxVal = autoNorm(datingDataMat)
+    
+    inArr = np.array([percentTats, ffMiles, iceCream])
+    inArr = (inArr - mimVal)/ranges
+    
+    classifyResultLabel = classify0(inArr, datingDataMat, datingLabels, 10)
+    print 'You will probably like this person: ', resultList[classifyResultLabel]
+    
+    
+>>> classifyPersion()
+percentage of time spent playing video games?12
+frequent flier miles earned per year?5600000
+liters of ice cream consumed per year?5
+You will probably like this person:  in small doses
+```
 
-- 每年获得的飞行里程数
-- 玩视频游戏所花费时间百分比
-- 每周消费的冰淇淋公升数
-### 2.1.3 准备数据： 归一化数值
-### 2.1.3 准备数据： 归一化数值
-### 2.1.3 准备数据： 归一化数值
+
+### 2.1.6 准备数据： 归一化数值
 
 ### 参考
 [Numpy使用中文教程](http://old.sebug.net/paper/books/scipydoc/numpy_intro.html)
