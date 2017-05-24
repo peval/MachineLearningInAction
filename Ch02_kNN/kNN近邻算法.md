@@ -21,11 +21,39 @@ ___
 - 每年获得的飞行里程数
 - 玩视频游戏所花费时间百分比
 - 每周消费的冰淇淋公升数
+
 海伦将这1000条数据分别进行标记，是否为自己喜欢的类型。所有特征与标签数据都存放在datingTestSet.txt文件中。
+
 交往过的3种标记类型：
 - 不喜欢的人
 - 魅力一般的人
 - 极具魅力的人
+
+### 从文本中读取并解析数据
+```python
+def file2matrix(filename):
+    '''
+    从文件filename中读取约会数据样本，并返回样本数据与标签
+    '''
+    returnMat = []
+    returnLabel = []
+    lable = {'didntLike':0, 'smallDoses':1, 'largeDoses':2}
+    with open(filename, 'r') as fp:
+        lines = fp.readlines()
+        returnMat = np.zeros((len(lines), 3)) #定义一个(len(lines), 3) 2维数组并填充0
+        '''
+        这里使用zeros初始化全是0是二维数组的好处是，np会默认将从文件读取的字符串转化成float, 不用在代码里显示转换
+        '''
+        index = 0
+        for line in lines:
+            listFromLine = line.strip().split('\t')
+            returnMat[index,:] = listFromLine[0:3]
+            returnLabel.append(lable[listFromLine[-1]] if listFromLine[-1] in lable else 1)
+            index +=1
+        returnMat = np.array(returnMat)
+            
+    return returnMat , returnLabel
+```
 
 
 ### 参考
