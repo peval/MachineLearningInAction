@@ -8,6 +8,7 @@ k-近邻（kNN）算法测试
 
 import numpy as np   #科学计算模块包
 import operator #运算符模块包
+from os import listdir
 
 def createDataset():
     '''
@@ -182,11 +183,51 @@ def img2vector(filename):
         index = 0
         for line in fp.readlines():
             line = line.strip()
-            for i in range(32):
-                returnVect[0,index*32+i] = int(line[i])
+            returnVect[0,index*32 : (index+1)*32] = list(line)
             index +=1
     return returnVect
+
+
+def handwritingClassTest():
+    hwLables = []
+    trainingFileList = listdir('trainingDigits')
+    
+    #删除非测试文件，因为mac os所有目录中都存在'.DS_Store'文件
+    for filename in trainingFileList:
+        if filename.endswith('.txt'):
+            continue
+        else:
+            trainingFileList.remove(filename)
+            
+    m = len(trainingFileList)
+    trainingMat = np.zeros((m,1024))
+    
+    for i in range(m):
+        filename = trainingFileList[i]
+        hwLables.append(filename.split('_')[0])
+        trainingMat[i,:] = img2vector("trainingDigits/" + filename)
         
+    testFileList = listdir('testDigits')
+    testFileList.remove('.DS_Store')
+    
+    errorCount = 0.0
+    for testfile in testFileList:
+        testMat = img2vector('testDigits/' + testfile)
+        testLabel = testfile.split('_')[0]
+        classifyResultLabel = classify0(testMat, trainingMat, hwLables, 10)
+        
+        print 'the classify Result is %s ,and the true label is %s.', (classifyResultLabel, testLabel)
+        if classifyResultLabel != testLabel :
+            errorCount +=1
+            
+    print "the total number of errors is : %d" % errorCount
+    print "the total error rate is : %f" % (errorCount/float(len(testFileList)))
+    
+    
+        
+    
+    
+            
     
     
     
@@ -215,4 +256,5 @@ if __name__ == "__main__":
     #plt.show()
     
     print img2vector('trainingDigits/8_60.txt')
+    handwritingClassTest()
 

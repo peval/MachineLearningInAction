@@ -226,15 +226,88 @@ def img2vector(filename):
         index = 0
         for line in fp.readlines():
             line = line.strip()
-            for i in range(32):
-                returnVect[0,index*32+i] = int(line[i])
+            returnVect[0,index*32 : (index+1)*32] = list(line)
             index +=1
     return returnVect
+
+
+>>> returnVect = img2vector('trainingDigits/8_60.txt')
+>>> returnVect[0, 0:32]
+array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+        0.,  1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+        0.,  0.,  0.,  0.,  0.,  0.])
+>>> returnVect[0, 32:64]
+array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+        1.,  1.,  1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,
+        0.,  0.,  0.,  0.,  0.,  0.])
+
 ```
 
+### 2.2.2 测试算法： 使用K-近邻算法识别手写数字
+在代码头部添加代码from os import listdir, listdir用于获取目录下的所有文件,并返回一个包含文件名的list对象。由于在mac os下测试此代码，因mac 默认每个目录下都存在'.DS_Store'文件，所以得先删除。
+
+```python
+def handwritingClassTest():
+    hwLables = []
+    trainingFileList = listdir('trainingDigits')
+    
+    #删除非测试文件，因为mac os所有目录中都存在'.DS_Store'文件
+    for filename in trainingFileList:
+        if filename.endswith('.txt'):
+            continue
+        else:
+            trainingFileList.remove(filename)
+            
+    m = len(trainingFileList)
+    trainingMat = np.zeros((m,1024))
+    
+    for i in range(m):
+        filename = trainingFileList[i]
+        hwLables.append(filename.split('_')[0])
+        trainingMat[i,:] = img2vector("trainingDigits/" + filename)
+        
+    testFileList = listdir('testDigits')
+    testFileList.remove('.DS_Store')
+    
+    errorCount = 0.0
+    for testfile in testFileList:
+        testMat = img2vector('testDigits/' + testfile)
+        testLabel = testfile.split('_')[0]
+        classifyResultLabel = classify0(testMat, trainingMat, hwLables, 10)
+        
+        print 'the classify Result is %s ,and the true label is %s.', (classifyResultLabel, testLabel)
+        if classifyResultLabel != testLabel :
+            errorCount +=1
+            
+    print "the total number of errors is : %d" % errorCount
+    print "the total error rate is : %f" % (errorCount/float(len(testFileList)))
 
 
 
+#部分输出信息,可以看出错误率只有2.1%:
+>>> handwritingClassTest()
+the classify Result is %s ,and the true label is %s. ('0', '0')
+the classify Result is %s ,and the true label is %s. ('0', '0')
+the classify Result is %s ,and the true label is %s. ('0', '0')
+the classify Result is %s ,and the true label is %s. ('0', '0')
+the classify Result is %s ,and the true label is %s. ('0', '0')
+...
+the classify Result is %s ,and the true label is %s. ('9', '9')
+the classify Result is %s ,and the true label is %s. ('9', '9')
+the classify Result is %s ,and the true label is %s. ('9', '9')
+the classify Result is %s ,and the true label is %s. ('9', '9')
+the classify Result is %s ,and the true label is %s. ('9', '9')
+the total number of errors is : 20
+the total error rate is : 0.021142
+```
+由于图片样本文件中的值都已经在0和1之间，本测试程序并不用使用autoNorm函数进行归一化。
+实际在使用这个算法时，算法的执行效率并不高。因为算法要为每个测试向量做2000次距离计算，每个距离计算包括了1024个维度浮点运算，总计要执行900次。此外，我们还要为测试向量准备2MB的存储空间。
+
+是否存在一种算法减少存储空间和计算时间的开销呢？
+
+**K决策树** 就是k- 近邻算法的优化版，可以节省大量的计算开销。
+
+K近邻算法另一个 **缺陷** 是无法给出任何数据的基础结构信息，因些无所知晓平均实例样本和典型实例样本具有什么特征。
 
 
 ### 参考
