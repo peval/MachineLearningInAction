@@ -5,7 +5,6 @@ from math import log
 import operator
 import treePlotter
 
-
 '''
  决策树 算法测试
 '''
@@ -150,6 +149,38 @@ def classify(inputTree, featLabels , testVec):
                 classLabel = secondDict[key]
     return classLabel
 
+def storeTree(inputTree, filename):
+    '''
+    将决策树序列化存储到文件filename中
+    '''
+    import pickle
+    fw = open(filename, 'w')
+    pickle.dump(inputTree, fw)
+    fw.close()
+
+def grabTree(filename):
+    '''
+    从文件中反序列化出决策树对象
+    '''
+    import pickle
+    fr = open(filename, 'r')
+    inputTree = pickle.load(fr)
+    fr.close()
+    return inputTree
+
+
+def lensesClassify(filename):
+    '''
+    针对隐形眼镜数据生成决策树，并分类
+    '''
+    with open(filename, 'r') as fp:
+        lenses = [line.strip().split('\t') for line in fp.readlines()]
+        lensesLables = ['age', 'prescript', 'astigmatic', 'tearRate']
+        
+        myTree = createTree(lenses, lensesLables)
+        print myTree
+        treePlotter.createPlot(myTree)
+        
 
 if __name__ == '__main__':
     myDat, labels = createDataset()
@@ -172,6 +203,10 @@ if __name__ == '__main__':
     
     print classify(myTree, labels, [1,0])
     print classify(myTree, labels, [1,1])
+    
+    #storeTree(myTree, 'filename')
+    
+    lensesClassify('lenses.txt')
     
     
     
