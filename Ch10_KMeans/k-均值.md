@@ -39,7 +39,7 @@ K-Means 要解决的问题
 
 ## 2.1 相异度计算（求距离的公式）
 
-设$X=\left \{  x_1,x_2,...,x_n\right \}, Y=\left \{  y_1,y_2,...,y_n\right \}$,其中X,Y是两个不同对象，各自拥有n个可度量的特征属性，那么X和Y的相异度定义为 $d\left ( X,Y \right ) = f\left ( X,Y \right ) \rightarrow R$ ，其中R为实数域。下面介绍不同类型变量相异度计算方法。
+设 $ X=\left \{  x_1,x_2,...,x_n\right \}, Y=\left \{  y_1,y_2,...,y_n\right \} $ ,其中X,Y是两个不同对象，各自拥有n个可度量的特征属性，那么X和Y的相异度定义为 $d\left ( X,Y \right ) = f\left ( X,Y \right ) \rightarrow R$ ，其中R为实数域。下面介绍不同类型变量相异度计算方法。
 
 **欧几里得距离**:
 $$d\left ( X,Y \right ) = \sqrt{\left ( x_1 - y_1 \right )^2 + \left ( x_2 - y_2 \right )^2 +... + \left ( x_n - y_n \right )^2 }  $$
@@ -78,18 +78,4 @@ $$d_{ij} = \sum_{k=1}^{n}\left | x_{ik} -x_{jk} \right |$$
 Minkowski Distance                        | Euclidean Distance | CityBlock Distance
 ----------------------------------------- | ------------------- | -------------------
 ![Minkowski Distance](Minkowski-Mean.jpg) | ![Euclidean Distance ](Euclidean-distance.jpg) | ![CityBlock Distance](Manhattan-distance.jpg)
-
-
-![Minkowski Distance](Minkowski-Mean.jpg)
-
-(1) Minkowski Distance
-
-![Euclidean Distance ](Euclidean-distance.jpg)
-
-(2) Euclidean Distance 
-
-![CityBlock Distance](Manhattan-distance.jpg)
-
-(3) CityBlock Distance
-
 
