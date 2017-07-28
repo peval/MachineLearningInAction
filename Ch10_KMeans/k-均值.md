@@ -79,3 +79,4 @@ Minkowski Distance                        | Euclidean Distance | CityBlock Dista
 ----------------------------------------- | ------------------- | -------------------
 ![Minkowski Distance](Minkowski-Mean.jpg) | ![Euclidean Distance ](Euclidean-distance.jpg) | ![CityBlock Distance](Manhattan-distance.jpg)
 
+$$ \left \{ x,y,z \right \} $$
