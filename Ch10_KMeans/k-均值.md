@@ -75,8 +75,170 @@ $$d_{ij} = \sum_{k=1}^{n}\left | x_{ik} -x_{jk} \right |$$
 
 这三个公式的求中心点有一些不一样的地方，我们看下图（对于第一个 λ 在 0-1之间）。
 
-Minkowski Distance                        | Euclidean Distance | CityBlock Distance
+(1) Minkowski Distance                    | (2) Euclidean Distance | (3) CityBlock Distance
 ----------------------------------------- | ------------------- | -------------------
 ![Minkowski Distance](Minkowski-Mean.jpg) | ![Euclidean Distance ](Euclidean-distance.jpg) | ![CityBlock Distance](Manhattan-distance.jpg)
 
-$$ \left \{ x,y,z \right \} $$
+上面这几个图的大意是他们是怎么个逼近中心的，**第一个图以星形的方式，第二个图以同心圆的方式，第三个图以菱形的方式**。
+
+## 2.3 K-means算法实现
+创建KMeans.py文件，先增加K-均值聚类支持函数
+```python
+#!/usr/bin/env python
+# encoding=utf8
+
+import numpy as np
+
+def loadDataSet(filename):
+    '''
+    从文件中加载数据
+    '''
+    dataMat = []
+    with open(filename, 'r') as fp:
+        for line in fp.readlines():
+            curLine = line.strip().split('\t')
+            fltLine = map(float, curLine)
+            dataMat.append(fltLine)
+    return dataMat
+
+def distEclud(vecA , vecB):
+    '''
+    距离计算公式，相异度计算，这里选用欧几里得距离
+    '''
+    return np.sqrt(np.sum(np.power(vecA - vecB , 2))) # 欧几里得距离
+
+def randCent(dataSet, k):
+    '''
+    从dataSet中随机选择k个质心，质心必须要在整个数据集的边界之内。
+    这里通过找到数据集中每一维的最小和最大值来完成。然后生成0~1之间的随机数 乘以 维范围，以确保随机点在数据的边界之内。
+    '''
+    n = np.shape(dataSet)[1] #列数、特征个数
+    centroids = np.mat(np.zeros((k,n)))
+    
+    for j in range(n):
+        minJ = np.min(dataSet[:,j])  #特征J列最小值
+        rangeJ = np.max(dataSet[:,j]) - minJ
+        centroids[:,j] = minJ + rangeJ * np.random.rand(k, 1)   # np.random.rand(k, 1) 生成k个0~1之间的随机数
+    return centroids
+    
+
+
+
+>>> dataMat = np.mat(loadDataSet('testSet.txt'))    
+>>> np.min(dataMat[:,1])
+-4.2325860000000004
+>>> np.min(dataMat[:,0])
+-5.3797129999999997
+>>> randCent(dataMat, 2)
+matrix([[ 0.77578934,  2.88560484],
+        [-5.05754113,  4.14571695]])
+>>> distEclud(dataMat[0], dataMat[1])
+5.184632816681332
+
+>>> np.random.rand(4, 1)
+array([[ 0.74215908],
+       [ 0.3339263 ],
+       [ 0.28940638],
+       [ 0.04805735]])
+
+```
+如上，所有支持函数均工作正常，下面开始实现完整的K-均值算法。先创建k个质心，然后将每个点分配到最近到质心，再重新计算质心。整个过程迭代多次，直到数据点的簇分配结果不再改变为止。
+
+```python
+def kMeans(dataSet, k, distMeas = distEclud, createCent=randCent):
+    '''
+    K-均值聚类算法。k为簇的数目，distMeas距离公式，createCent质心选择算法
+    '''
+    m = np.shape(dataSet)[0]
+    clusterAssment = np.mat(np.zeros((m,2))) #簇分配结果矩阵，包含两列，第一列记录簇索引值，第二列存储误差（指当前点到簇质心的距离，
+    #后面会使用这个误差来评价聚类的效果）。
+    
+    centroids = createCent(dataSet, k)
+    clusterChanged = True #标志变量，是否继续迭代
+    
+    while clusterChanged:
+        clusterChanged = False
+        for i in range(m):
+            minDist = np.inf; minIndex = -1
+            
+            for j in range(k):
+                distJI = distEclud(dataSet[i,:], centroids[j,:]) # 计算点i到质心j的距离
+                if distJI < minDist: #寻找最近的质心
+                    minDist = distJI
+                    minIndex = j
+            if clusterAssment[i,0] != minIndex:
+                clusterChanged = True
+                clusterAssment[i,:] = minIndex, minDist**2  #簇分配结果矩阵,存储簇索引值与误差
+        print centroids
+        
+        #待一轮原始数据都找到对应质心后，然后遍历所有质心并重新计算簇质心位置，最后继续下一轮迭代
+        for cent in range(k):
+            #先通过数组过滤来获得给定簇的所有点，然后计算所有点的均值，选项axis =0表示沿矩阵的列方向进行均值计算；最后，程序返回所有的类质心与点分配结果。
+            ptsInClust = dataSet[np.nonzero(clusterAssment[:,0].A == cent)[0]] #.A 将matrix转换成array; np.nonzero()返回的是非0值的索引数组
+            #dataSet[[2,3,4]] 返回第2，3，4行
+            centroids[cent,:] = np.mean(ptsInClust, axis=0) #按行计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
+    return centroids, clusterAssment
+
+
+
+>>> myCentroids, clusterAssing = kMeans(dataMat, 4) # 迭代5轮
+[[-0.51370032  0.06094998]
+ [-0.26905699  0.15430158]
+ [ 1.17454355  4.17031088]
+ [-1.07360784  0.30230069]]
+
+[[-0.28093075 -3.880518  ]
+ [ 3.03713839 -2.62802833]
+ [ 2.1037747   3.1883033 ]
+ [-3.14916123 -0.17600851]]
+
+[[-1.53903612 -3.5993315 ]
+ [ 3.03713839 -2.62802833]
+ [ 1.98283629  3.1465235 ]
+ [-3.27444433  0.16422313]]
+
+[[-2.86821747 -3.16321911]
+ [ 3.03713839 -2.62802833]
+ [ 1.98283629  3.1465235 ]
+ [-2.949973    1.90701079]]
+
+[[-3.38237045 -2.9473363 ]
+ [ 2.80293085 -2.7315146 ]
+ [ 2.6265299   3.10868015]
+ [-2.46154315  2.78737555]]
+
+#.A 将matrix转换成array
+>>> clusterAssment[:,0]
+matrix([[ 2.],
+        [ 1.],
+        [ 3.],
+        [ 0.],
+        [ 1.],
+>>> np.shape(clusterAssment[:,0])
+(80, 1)
+>>> np.shape(clusterAssment[:,0].A)
+(80, 1)
+>>> clusterAssment[:,0].A
+array([[ 2.],
+       [ 1.],
+       [ 3.],
+       [ 0.],
+       [ 1.],
+       [ 0.],
+       [ 3.],
+
+>>> clusterAssment[:,0].A == cent
+array([[False],
+       [False],
+       [False],
+       [ True],
+       [False],
+       [ True],
+       [False],
+>>> np.nonzero(clusterAssment[:,0].A == cent)
+(array([ 3,  5,  7, 11, 14, 19, 23, 27, 29, 31, 35, 39, 43, 47, 51, 55, 59,
+       63, 67, 71, 75, 79]), array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+
+>>> np.mean(ptsInClust, axis=0)  #按行计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
+matrix([[ 3.05350329,  2.07347767]])
+```
