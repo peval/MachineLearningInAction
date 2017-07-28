@@ -35,7 +35,61 @@ K-Means 要解决的问题
 3. 接下来，我们要移动种子点到属于他的“点群”的中心。（见图上的第三步）
 4. 最后重复第2）和第3）步，直到种子点不再移动（我们可以看到图中的第四步上面的种子点聚合了A,B,C，下面的种子点聚合了D，E）。
 
-这个算法很简单，但是有些细节要提一下，**求距离的公式**。
+这个算法很简单，但是有些细节要提一下，**求距离的公式(也就是相异度计算)**。
 
+## 2.1 相异度计算（求距离的公式）
+
+设$X=\left \{  x_1,x_2,...,x_n\right \}, Y=\left \{  y_1,y_2,...,y_n\right \}$,其中X,Y是两个不同对象，各自拥有n个可度量的特征属性，那么X和Y的相异度定义为 $d\left ( X,Y \right ) = f\left ( X,Y \right ) \rightarrow R$ ，其中R为实数域。下面介绍不同类型变量相异度计算方法。
+
+**欧几里得距离**:
+$$d\left ( X,Y \right ) = \sqrt{\left ( x_1 - y_1 \right )^2 + \left ( x_2 - y_2 \right )^2 +... + \left ( x_n - y_n \right )^2 }  $$
+
+**曼哈顿距离**:
+$$ d\left ( X,Y \right ) =\left | x_1 - y_1 \right | + \left | x_2 - y_2 \right | +...+  \left | x_n - y_n \right | $$
+
+**闵可夫斯基距离**:
+$$ d\left ( X,Y \right ) = \sqrt[p]{\left ( x_1 - y_1 \right )^p + \left ( x_2 - y_2 \right )^p +... + \left ( x_n - y_n \right )^p }  $$
+
+欧氏距离和曼哈顿距离可以看做是闵可夫斯基距离在p=2和p=1下的特例。另外这三种距离都可以加权，这个很容易理解，不再赘述。
+
+下面要说一下标量的**规格化问题**。上面这样计算相异度的方式有一点问题，就是**取值范围大的属性对距离的影响高于取值范围小的属性**。为了平衡各个属性对距离的影响,通常将各个属性均映射到[0,1]区间，映射公式为：
+$${a_i}' = \frac{a_i - \min (a_i)}{\max (a_i) -  \min (a_i)}$$
+
+
+## 2.2 求点群中心的算法
+
+一般来说，求点群中心点的算法你可以很简的使用各个点的X/Y坐标的平均值。不过，我这里想告诉大家另三个求中心点的的公式：
+
+1) **平均值公式**：
+$$ \bar{x} = \frac{x_1 + x_2 + ... + x_n}{n} $$
+$$ \bar{y} = \frac{y_1 + y_2 + ... + y_n}{n} $$
+
+2) **Minkowski Distance 公式** —— λ 可以随意取值，可以是负数，也可以是正数，或是无穷大。
+$$d_{ij} = \sqrt[\lambda ]{\sum_{k=1}^{n}\left | x_{ik} -x_{jk} \right |^\lambda } $$
+
+3) **Euclidean Distance 公式** —— 也就是第一个公式 λ=2 的情况
+$$ d_{ij} = \sqrt{\sum_{k=1}^{n}\left | x_{ik} -x_{jk} \right |^2 } $$
+
+4) **CityBlock Distance 公式** —— 也就是第一个公式 λ=1 的情况
+$$d_{ij} = \sum_{k=1}^{n}\left | x_{ik} -x_{jk} \right |$$
+
+这三个公式的求中心点有一些不一样的地方，我们看下图（对于第一个 λ 在 0-1之间）。
+
+Minkowski Distance                        | Euclidean Distance | CityBlock Distance
+----------------------------------------- | ------------------- | -------------------
+![Minkowski Distance](Minkowski-Mean.jpg) | ![Euclidean Distance ](Euclidean-distance.jpg) | ![CityBlock Distance](Manhattan-distance.jpg)
+
+
+![Minkowski Distance](Minkowski-Mean.jpg)
+
+(1) Minkowski Distance
+
+![Euclidean Distance ](Euclidean-distance.jpg)
+
+(2) Euclidean Distance 
+
+![CityBlock Distance](Manhattan-distance.jpg)
+
+(3) CityBlock Distance
 
 
