@@ -176,7 +176,7 @@ def kMeans(dataSet, k, distMeas = distEclud, createCent=randCent):
             #先通过数组过滤来获得给定簇的所有点，然后计算所有点的均值，选项axis =0表示沿矩阵的列方向进行均值计算；最后，程序返回所有的类质心与点分配结果。
             ptsInClust = dataSet[np.nonzero(clusterAssment[:,0].A == cent)[0]] #.A 将matrix转换成array; np.nonzero()返回的是非0值的索引数组
             #dataSet[[2,3,4]] 返回第2，3，4行
-            centroids[cent,:] = np.mean(ptsInClust, axis=0) #按行计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
+            centroids[cent,:] = np.mean(ptsInClust, axis=0) #沿矩阵的列方向计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
     return centroids, clusterAssment
 
 
@@ -239,6 +239,101 @@ array([[False],
 (array([ 3,  5,  7, 11, 14, 19, 23, 27, 29, 31, 35, 39, 43, 47, 51, 55, 59,
        63, 67, 71, 75, 79]), array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
 
->>> np.mean(ptsInClust, axis=0)  #按行计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
+>>> np.mean(ptsInClust, axis=0)  #沿矩阵的列方向计算平均值，最终输出一行多列。若axis=1，最终输出多行一列
 matrix([[ 3.05350329,  2.07347767]])
 ```
+
+![k-均值聚类结果示意图](k-均值聚类结果示意图.png)
+
+## 2.4 使用后处理来提高聚类性能
+簇数目K是用户预定义的参数，如何才能知道k的选择是正确的？下面讨论聚类的质量。
+
+如下，当选择簇数目K=3时的聚类结果示意图：
+
+![k-均值聚类结果示意图k=3](k-均值聚类结果示意图k=3.png)
+
+可以发现点的分配结果没有那么准确。k-均值算法收敛但聚类效果较差的原因是，**k-均值算法收敛到了局部最小值，而非全局最小值**。一种度量**聚类效果的指标是SSE( Sum of Squared Error,误差平方和)**，SSE值越小表示数据点越接近于它们的质心，聚类效果越好。簇越多，SSE越小，但我们目标是保持簇数目不变的情况下提高簇的质量。
+
+后处理，将具有最大SSE值的簇划分成两个簇；合并最近的质心，或者合并两个使得SSE增幅最小的质心。
+
+
+## 2.5 二分K-均值算法
+为克服K-均值算法收敛到局部最小值。二分K-均值算法先将所有点作为一个簇，然后一分为二，之后选择其中一个簇继续划分，以最大程序减小SSE的值。不断重复，直到得到用户指定的簇数目为止。
+
+二分K-均值算法的伪代码：
+```code
+将所有点看成一个簇
+当簇数目小于k时
+对于每一个簇
+	计算总误差
+	在给定的簇上面进行K-均值聚类（k=2）
+	计算将该簇一分为二后的总误差
+选择使得误差最小的那个簇进行划分操作
+```
+
+```python
+def biKmeans(dataSet, k ,distMeas = distEclud):
+    '''
+    二分K-均值算法
+    '''
+    m = np.shape(dataSet)[0]
+    clusterAssment = np.mat(np.zeros((m,2)))
+    centroid0 = np.mean(dataSet, axis=0).tolist()[0] # 计算原数据的质心，也就是所有数据的均值
+    centList = [centroid0] #用于存储所有质心点
+    
+    for j in range(m):
+        clusterAssment[j,1] = distEclud(dataSet[j, :], np.mat(centroid0)) ** 2
+    
+    while len(centList) < k :
+        lowestSSE  = np.inf  #无穷大infinite, 无穷小-inf
+        
+        for i in range(len(centList)): #对每个簇划分成两个子簇，并计算其SSE误差。比较所有划分，选出一个SSE减少最多的簇划分，作为本次迭代的最优划分。
+            ptsInCurrClusser = dataSet[np.nonzero(clusterAssment[:,0].A == i)[0], :] #当前簇的所有数据
+            centroidMat, splitClustAss = kMeans(ptsInCurrClusser, 2, distMeas) #划分成两个子簇
+            
+            sseSplit = np.sum(splitClustAss[:,1]) #计算两个子簇的SSE误差
+            sseNotSplit = np.sum(clusterAssment[np.nonzero(clusterAssment[:,0].A !=i )[0] , 1]) #计算非此划分簇以外的数据的SSE误差
+            
+            if (sseSplit + sseNotSplit) <  lowestSSE:  #选择误差减小最多的簇划分
+                bestCentToSplit = i
+                bestNewCents = centroidMat
+                bestClustAss = splitClustAss.copy()
+                lowestSSE = sseSplit + sseNotSplit
+                
+        # bestClustAss作为本次迭代的最优划分，由于是k=2的子簇划分，其索引值取值0或1.
+        # 以下两条代码是，更新索引值为总centList质心点数组是的序列号。
+        bestClustAss[np.nonzero(bestClustAss[:,0].A == 1)[0], 0] = len(centList) #将子簇中索引为1的，修改成新的最大序列（质心点数组大小+1）
+        bestClustAss[np.nonzero(bestClustAss[:,0].A == 0)[0],0] = bestCentToSplit #将子簇中索引为0的，修改成原簇对应的序列
+        
+        print 'the bestCentToSplit is: ', bestCentToSplit
+        print 'the len of bestClustAss is: ', len(bestClustAss)
+        
+        centList[bestCentToSplit] = bestNewCents[0,:]  #对应上面bestClustAss的修改，0子簇使用原centList中的序列号
+        centList.append(bestNewCents[1,:])  #对应上面bestClustAss的修改，1子簇在centList数组中新增加一个序列号
+        
+        clusterAssment[np.nonzero(clusterAssment[:,0].A == bestCentToSplit)[0], :] = bestClustAss  #修改新误差到clusterAssment中
+        
+    return centList, clusterAssment
+                
+
+>>> np.mean(dataSet, axis=0)
+matrix([[-0.10361321,  0.0543012 ]])
+>>> np.mean(dataSet, axis=0).tolist()
+[[-0.10361321250000004, 0.05430119999999998]]
+>>> np.mean(dataSet, axis=0).tolist()[0]
+[-0.10361321250000004, 0.05430119999999998]
+
+
+>>> dataMat2 = np.mat(loadDataSet('testSet2.txt'))
+>>> myCentroids, clusterAssing = biKmeans(dataMat2,3)
+>>> print myCentroids
+>>> platKMeans(dataMat2, myCentroids, clusterAssing)
+
+```
+发现每次执行后结果不一样，聚类效果时好时坏。如下图所示
+
+第一次执行                                                  | 第二次执行
+----------------------------------------------------------- | ---------------------------------------------------
+![二分K-均值聚类结果示意图](二分K-均值聚类结果示意图.png)   | ![二分K-均值聚类结果示意图](二分K-均值聚类结果示意图2.png)
+
+
