@@ -245,6 +245,14 @@ matrix([[ 3.05350329,  2.07347767]])
 
 ![k-均值聚类结果示意图](k-均值聚类结果示意图.png)
 
+**K-Means主要有两个最重大的缺陷——都和初始值有关：**
+
+- K 是事先给定的，这个 K 值的选定是非常难以估计的。很多时候，事先并不知道给定的数据集应该分成多少个类别才最合适。（ [ISODATA 算法](http://en.wikipedia.org/wiki/Multispectral_pattern_recognition)通过类的自动合并和分裂，得到较为合理的类型数目 K）
+
+- K-Means算法需要用初始随机种子点来搞，这个随机种子点太重要，不同的随机种子点会有得到完全不同的结果。（[K-Means++算法](http://en.wikipedia.org/wiki/K-means%2B%2B)可以用来解决这个问题，其可以有效地选择初始点）.相关代码实现[implement the K-means++ algorithm](http://rosettacode.org/wiki/K-means%2B%2B_clustering).
+
+
+ 
 ## 2.4 使用后处理来提高聚类性能
 簇数目K是用户预定义的参数，如何才能知道k的选择是正确的？下面讨论聚类的质量。
 
@@ -337,3 +345,14 @@ matrix([[-0.10361321,  0.0543012 ]])
 ![二分K-均值聚类结果示意图](二分K-均值聚类结果示意图.png)   | ![二分K-均值聚类结果示意图](二分K-均值聚类结果示意图2.png)
 
 
+#参考
+
+[k均值聚类(K-means)](http://www.cnblogs.com/leoo2sk/archive/2010/09/20/k-means.html)
+
+[一个挺好的算法的幻灯片](http://www.cs.cmu.edu/~guestrin/Class/10701-S07/Slides/clustering.pdf)
+
+[K-MEANS 算法](http://coolshell.cn/articles/7779.html)
+
+[A Tutorial on Clustering Algorithms](http://home.deib.polimi.it/matteucc/Clustering/tutorial_html/index.html)
+
+[A demo of K-Means clustering on the handwritten digits data](http://scikit-learn.org/stable/auto_examples/cluster/plot_kmeans_digits.html)
