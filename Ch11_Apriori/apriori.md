@@ -41,7 +41,7 @@
 
 **频繁项集是指那些经常出现在一起的商品集合**，图中的集合{葡萄酒,尿布,豆奶}就是频繁项集的一个例子。从这个数据集中也可以找到诸如尿布->葡萄酒的关联规则，即如果有人买了尿布，那么他很可能也会买葡萄酒。
 
-我们用**支持度**和**可信度**来度量这些有趣的关系。一个**项集的支持度（support）**被定义数据集中包含该项集的记录所占的比例。如上图中，{豆奶}的支持度为4/5，{豆奶,尿布}的支持度为3/5。支持度是针对项集来说的，因此可以定义一个最小支持度，而只保留满足最小值尺度的项集。
+我们用**支持度**和**可信度**来度量这些有趣的关系。一个**项集的支持度（support)**被定义数据集中包含该项集的记录所占的比例。如上图中，{豆奶}的支持度为4/5，{豆奶,尿布}的支持度为3/5。支持度是针对项集来说的，因此可以定义一个最小支持度，而只保留满足最小值尺度的项集。
 
 **可信度或置信度（confidence）**是针对**关联规则**来定义的。规则{尿布}➞{啤酒}的可信度被定义为"支持度({尿布,啤酒})/支持度({尿布})"，由于{尿布,啤酒}的支持度为3/5，尿布的支持度为4/5，所以"尿布➞啤酒"的可信度为3/4。这意味着对于包含"尿布"的所有记录，我们的规则对其中75%的记录都适用。 **规则{尿布}➞{啤酒} 可理解为条件概率，已知在购买尿布的情况下，还购买啤酒的概率**。
 
@@ -59,8 +59,115 @@
 在图3中，已知阴影项集{2,3}是非频繁的。利用这个知识，我们就知道项集{0,2,3}，{1,2,3}以及{0,1,2,3}也是非频繁的。也就是说，一旦计算出了{2,3}的支持度，知道它是非频繁的后，就可以紧接着排除{0,2,3}、{1,2,3}和{0,1,2,3}。
 
 ![Apriori原理](Apriori原理.png)
+
 图3 图中给出了所有可能的项集，其中非频繁项集用灰色表示。
 
+# 3 使用Apriori算法来发现频繁集
+
+前面提到，关联分析的目标包括两项：发现频繁项集和发现关联规则。首先需要找到频繁项集，然后才能获得关联规则（正如前文所讲，计算关联规则的可信度需要用到频繁项集的支持度）。
+
+Apriori算法是发现频繁项集的一种方法。Apriori算法的两个输入参数分别是最小支持度和数据集。该算法首先会生成所有单个元素的项集列表。接着扫描数据集来查看哪些项集满足最小支持度要求，那些不满足最小支持度的集合会被去掉。然后，对剩下来的集合进行组合以生成包含两个元素的项集。接下来，再重新扫描交易记录，去掉不满足最小支持度的项集。该过程重复进行直到所有项集都被去掉。
+
+# 3.1 生成候选项集
+数据集扫描的伪代码大致如下：
+
+```code
+对数据集中的每条交易记录tran：
+    对每个候选项集can：
+        检查can是否是tran的子集
+        如果是，则增加can的计数
+对每个候选项集：
+    如果其支持度不低于最小值，则保留该项集
+返回所有频繁项集列表
+```
+
+下面看一下实际代码，建立一个apriori.py文件并加入一下代码：
+
+```python
+#!/usr/bin/env python
+# encoding=utf8
+
+import numpy as np
+
+def loadDataSet():
+    return [[1, 3, 4], [2, 3, 5], [1, 2, 3, 5], [2, 5]]
+
+def createC1(dataSet):
+    '''
+    dataSet为全部数据集
+    返回元素个数为1的项集,如每个单独商品(去重后)列表
+    '''
+    C1 = [] #C1即为元素个数为1的项集,如每个单独商品列表
+    for transaction in dataSet:
+        for item in transaction:
+            if [item] not in C1:
+                C1.append([item])
+    C1.sort()
+    C1 = map(frozenset ,C1)  # map(frozenset, C1)的语义是将C1由Python列表转换为不变集合（frozenset，Python中的数据结构）。
+    #frozenset是不可变的，用户不能修改。这里使用frozenset是因为要将这些集合作为字典键值使用，使用frozenset可以实现，而set却做不到。
+    return C1
+
+def scanD(D, Ck , minSupport):
+    '''
+    D为全部数据集
+    Ck为大小为k（包含k个元素）的候选项集
+    minSupport为设定的最小支持度
+    
+    返回值中retList为在Ck中找出的频繁项集（支持度大于minSupport的），supportData记录各频繁项集的支持度。
+    '''
+    ssCnt = {} # 记录每个项集出现次数
+    
+    #统计每个项集出现次数
+    for tid in D:
+        for can in Ck:
+            if can.issubset(tid):
+                ssCnt[can] = ssCnt[can] + 1 if ssCnt.has_key(can) else 1
+    
+    numItems = float(len(D)) #全部数据集个数
+    retList = []
+    supportData = {}
+    
+    for key in ssCnt.iterkeys():
+        support = ssCnt[key] / numItems
+        if support >= minSupport:
+            retList.insert(0,key) # 将频繁项集插入返回列表的首部。
+        supportData[key] = support
+    return retList, supportData
+
+
+
+>>> dataSet = loadDataSet()
+>>> dataSet
+[[1, 3, 4], [2, 3, 5], [1, 2, 3, 5], [2, 5]]
+>>> C1 = createC1(dataSet)
+>>> C1
+[frozenset([1]), frozenset([2]), frozenset([3]), frozenset([4]), frozenset([5])]
+>>> D = map(set, dataSet)
+>>> D
+[set([1, 3, 4]), set([2, 3, 5]), set([1, 2, 3, 5]), set([2, 5])]
+>>> L1, supportData0 = scanD(D, C1, 0.5)
+>>> L1
+[frozenset([1]), frozenset([3]), frozenset([2]), frozenset([5])]
+>>> supportData0
+{frozenset([4]): 0.25, frozenset([5]): 0.75, frozenset([2]): 0.75, frozenset([3]): 0.75, frozenset([1]): 0.5}
+
+```
+
+# 3.2 完整的Apriori算法
+整个Apriori算法的伪代码如下：
+
+```code
+当集合中项的个数大于0时：
+    构建一个由k个项组成的候选项集的列表（k从1开始）
+    计算候选项集的支持度，删除非频繁项集
+    构建由k+1项组成的候选项集的列表
+```
+
+程序代码如下：
+
+```python
+
+```
 
 
 
