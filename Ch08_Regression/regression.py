@@ -52,7 +52,7 @@ def plotStandRegress():
 def lwlr(testPoint , xArr , yArr ,k=1.0):
     '''
         局部加权线性回归函数
-        testPoint: 待预测的点
+        testPoint: 待预测的点，单条记录
         xArr: 样本特征
         yArr: 样本标签值
         k默认为1.0
@@ -77,6 +77,11 @@ def lwlr(testPoint , xArr , yArr ,k=1.0):
 
 def lwlrTest(testArr , xArr, yArr, k=1.0):
     '''
+    局部加权线性回归函数
+        testArr: 待预测的点，多条记录
+        xArr: 样本特征
+        yArr: 样本标签值
+        k默认为1.0
     '''
     m = np.shape(testArr)[0] #待预测测试样本个数
     yHat = np.zeros(m)
@@ -88,11 +93,12 @@ def lwlrTest(testArr , xArr, yArr, k=1.0):
 
 def plotLwlrRegress():
     '''
+    画出局部加权线性回归函数生成的回归直线
     '''
     import matplotlib.pyplot as plt
-    plt.figure(u"局部加权线性回归函数,使用不同的k值[1.0, 0.01, 0.003]")
+    plt.figure(u"局部加权线性回归函数,使用不同的k值[1.0, 0.01, 0.003]") #图的title
     
-    plt.subplot(311)
+    plt.subplot(311) #311表明，整个图分为三行一列，此时在第一行内画图
     
     xArr , yArr = loadDataSet('ex0.txt')
     xMat = np.mat(xArr); yMat = np.mat(yArr)
@@ -104,9 +110,9 @@ def plotLwlrRegress():
     plt.plot(xSort[:,1], yHat[srtInd])
 
     plt.scatter(xMat[:,1].flatten().A[0], np.mat(yArr).T.flatten().A[0], s=2, c='red')
-    plt.text(0.5, 4.0, 'k=1.0', color='red', size=16, horizontalalignment='right', verticalalignment='bottom')
+    plt.text(0.5, 4.0, 'k=1.0', color='red', size=16, horizontalalignment='right', verticalalignment='bottom') #在线条边标注k值
     
-    plt.subplot(312)
+    plt.subplot(312) #312表明，整个图分为三行一列，此时在第二行内画图
     yHat1 = lwlrTest(xArr , xArr, yArr, k=0.01)
     plt.plot(xSort[:,1], yHat1[srtInd])
     plt.scatter(xMat[:,1].flatten().A[0], np.mat(yArr).T.flatten().A[0], s=2, c='blue')
@@ -122,7 +128,103 @@ def plotLwlrRegress():
     
     plt.show()
     
+    
+# 预测鲍鱼的年龄
+
+def rssError(yArr , yHatArr):
+    '''
+    计算预测值与真实值之间的误差，平方和
+    '''
+    return ((yArr - yHatArr)**2).sum()
         
+def abaloneTest():
+    '''
+    使用LWLR预测鲍鱼的年龄
+    '''
+    xArr , yArr = loadDataSet('abalone.txt')
+    yHat01 = lwlrTest(xArr[0:99], xArr[0:99], yArr[0:99], 0.1)
+    yHat1 = lwlrTest(xArr[0:99], xArr[0:99], yArr[0:99], 1)
+    yHat10 = lwlrTest(xArr[0:99], xArr[0:99], yArr[0:99], 10)
+    
+    print rssError(yArr[0:99], yHat01.T) #56.8041972556
+    print rssError(yArr[0:99], yHat1.T)  #429.89056187
+    print rssError(yArr[0:99], yHat10.T) #549.
+    
+    
+    yHat01 = lwlrTest(xArr[100:199], xArr[0:99], yArr[0:99], 0.1)
+    yHat1 = lwlrTest(xArr[100:199], xArr[0:99], yArr[0:99], 1)
+    yHat10 = lwlrTest(xArr[100:199], xArr[0:99], yArr[0:99], 10)
+    
+    print rssError(yArr[100:199], yHat01.T) #106085.423168
+    print rssError(yArr[100:199], yHat1.T)  #573.52614419
+    print rssError(yArr[100:199], yHat10.T) #517.571190538   
+    
+    
+    ws = standRegres(xArr[0:99], yArr[0:99])
+    yHat = np.mat(xArr[100:199]) * ws
+    print rssError(yArr[100:199], yHat.T.A) #518.636315325   
+    
+    
+#岭回归
+    
+def ridgeRegres(xMat, yMat, lam=0.2):
+    '''
+    岭回归缩减方法,用于计算回归系数
+    xMat:样本特征
+    yMat: 样本标签值
+    lam: lambda值，默认为0.2
+    '''
+    xTx = xMat.T * xMat
+    denom = xTx + np.eye(np.shape(xMat)[1]) * lam #  np.eye(np.shape(xMat)[1])生成一个特征个数n*特征个数n的单位矩阵
+    
+    if np.linalg.det(denom) == 0.0: #计算行列式，判断是否有逆矩阵。若没检查行列式是否为0就直接计算矩阵的逆，将会出现错误。另外Numpy的线性代数库还提供一个函数来解未知矩阵，修改ws = xTx.I * (xMat.T * yMat)为ws = np.linalg.solve(xTx, xMat.T*yMat)
+        print "This matrix is singular , cannot do inverse"
+        return
+    ws = denom.I * (xMat.T * yMat)
+    return ws
+
+def ridgeTest(xArr , yArr):
+    '''
+    测试岭回归缩减方法，通过使用不同的lambda值
+    '''
+    xMat = np.mat(xArr); yMat = np.mat(yArr).T
+    
+    #下面进行特征数据的归一化标准处理，使每个维具有相同的重要性
+    yMean = np.mean(yMat,0) #计算yMat，类型的平均值
+    yMat = yMat - yMean
+    
+    #所有特征都减去各自的均值，并除以方差。
+    xMeans = np.mean(xMat , 0) #计算每个特征的平均值
+    xVar = np.var(xMat, 0) #计算指定轴上的方差。0表示二维数组中计算a11、a21、a31、……、am1的方差， 依此类推
+    xMat = (xMat - xMeans) / xVar
+    
+    numTestPts = 30 #使用30个lambda值进行测试，且lambda值是以指数变化。这样可以看出lambda在取非常小与非常大的值时分别对结果造成的影响。
+    wMat = np.zeros((numTestPts, np.shape(xMat)[1])) #生成一个30*特征个数的0矩阵
+    
+    for i in range(numTestPts):
+        ws = ridgeRegres(xMat, yMat, lam= np.exp(i - 10))
+        wMat[i] = ws.T
+    return wMat
+
+def plotRidge():
+    '''
+    画出30组指数变化的lambda值生成的岭回归直线
+    '''
+    import matplotlib.pyplot as plt
+    fig = plt.figure(u"30组指数变化的lambda值生成的岭回归直线") #图的title
+    
+    ax = fig.add_subplot(111) #311表明，整个图分为三行一列，此时在第一行内画图
+    
+    xArr , yArr = loadDataSet('abalone.txt')
+    ridgeWeights = ridgeTest(xArr, yArr)    
+    
+    ax.plot(ridgeWeights)
+    plt.show()
+    
+    
+    
+    
+    
 
 
 
@@ -138,9 +240,16 @@ if __name__ == '__main__':
     
     
     # 局部加权线性回归函数
-    print yArr[0]
-    print lwlr(xArr[0], xArr, yArr, 1.0)
-    print lwlr(xArr[0], xArr, yArr, 0.001)
+    #print yArr[0]
+    #print lwlr(xArr[0], xArr, yArr, 1.0)
+    #print lwlr(xArr[0], xArr, yArr, 0.001)
     
-    plotLwlrRegress()
+    #plotLwlrRegress()
+    
+    
+    # 预测鲍鱼的年龄
+    #abaloneTest()
+    
+    
+    plotRidge()
     
