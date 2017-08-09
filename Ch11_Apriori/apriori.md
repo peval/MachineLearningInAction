@@ -37,7 +37,7 @@
 3       |  莴苣，豆奶，尿布，葡萄酒
 4       |  莴苣，豆奶，尿布，橙汁
 
-    图1 某杂货店交易清单
+图1 某杂货店交易清单
 
 **频繁项集是指那些经常出现在一起的商品集合**，图中的集合{葡萄酒,尿布,豆奶}就是频繁项集的一个例子。从这个数据集中也可以找到诸如尿布->葡萄酒的关联规则，即如果有人买了尿布，那么他很可能也会买葡萄酒。
 
@@ -167,7 +167,160 @@ def scanD(D, Ck , minSupport):
 
 ```python
 
+def aprioriGen(Lk , k):
+    '''
+    该函数通过频繁项集列表Lk(实际是Lk-1)和项集个数k生成候选项集Lk。
+    k的大小等于LK中频繁项集中的项数+1，eg: k == len(lk[0]) + 1    
+
+    注意其生成的过程中，首先对每个项集按元素排序，然后每次比较两个项集，只有在前k-1项相同时才将这两项合并。
+    这样做是因为函数并非要两两合并各个集合，那样生成的集合并非都是k+1项的。在限制项数为k+1的前提下，只有在
+    前k-1项相同、最后一项不相同的情况下合并才为所需要的新候选项集。
+
+    由于Python中使用下标0表示第一个元素，因此代码中的[:k-2]的实际作用为取列表的前k-1个元素。
+    
+    '''
+    retList = []
+    lenLk = len(Lk)
+    
+    for i in range(lenLk):
+        for j in range(i+1 , lenLk):
+            # 若前k-2项相同时（也就是除了最后一项不相同，eg: abc与abe），将两个集合合并
+            L1 = list(Lk[i])[:k-2]; L2 = list(Lk[j])[:k-2]
+            L1.sort(); L2.sort()
+            if L1 == L2:
+                retList.append(Lk[i] | Lk[j])  # frozenset集合并操作
+    return retList
+    
+def apriori(dataSet, minSupport=0.5):
+    '''
+    Apriori算法的主函数。
+    
+    Ck表示项数为k的候选项集，最初的C1通过createC1()函数生成。Lk表示项数为k的频繁项集，supK为其支持度，Lk和supK由scanD()函数通过Ck计算而来。
+    
+    函数返回的L和supportData为所有的频繁项集及其支持度，因此在每次迭代中都要将所求得的Lk和supK添加到L和supportData中。
+    
+    '''
+    C1 = createC1(dataSet)
+    D = map(set, dataSet)
+    
+    L1, supportData = scanD(D, C1, minSupport)
+    
+    L = [L1]
+    k = 2
+    
+    while (len(L[k-2]) > 0):
+        Ck = aprioriGen(L[k-2], k)
+        Lk, supportDataK = scanD(D, Ck, minSupport)
+        supportData.update(supportDataK)
+        L.append(Lk)
+        k +=1
+    return L, supportData
+    
+
+>>> L, supportData = apriori(dataSet)
+>>> L
+[[frozenset([1]), frozenset([3]), frozenset([2]), frozenset([5])], [frozenset([1, 3]), frozenset([2, 5]), frozenset([2, 3]), frozenset([3, 5])], [frozenset([2, 3, 5])], []]
+>>> supportData
+{frozenset([5]): 0.75, frozenset([3]): 0.75, frozenset([2, 3, 5]): 0.5, frozenset([1, 2]): 0.25, frozenset([1, 5]): 0.25, frozenset([3, 5]): 0.5, frozenset([4]): 0.25, frozenset([2, 3]): 0.5, frozenset([2, 5]): 0.75, frozenset([1]): 0.5, frozenset([1, 3]): 0.5, frozenset([2]): 0.75}
+
+
+# 至少75%的支持度 
+>>> L, supportData = apriori(dataSet, 0.75)
+>>> L
+[[frozenset([3]), frozenset([2]), frozenset([5])], [frozenset([2, 5])], []]
+>>> supportData
+{frozenset([5]): 0.75, frozenset([3]): 0.75, frozenset([3, 5]): 0.5, frozenset([4]): 0.25, frozenset([2, 3]): 0.5, frozenset([2, 5]): 0.75, frozenset([1]): 0.5, frozenset([2]): 0.75}
+
+
 ```
 
+# 3.3 从频繁集中挖掘相关规则
+
+要找到关联规则，我们首先从一个频繁项集开始。从杂货店的例子可以得到，如果有一个频繁项集{豆奶, 莴苣}，那么就可能有一条关联规则“豆奶➞莴苣”。这意味着如果有人购买了豆奶，那么在统计上他会购买莴苣的概率较大。注意这一条反过来并不总是成立，也就是说，可信度(“豆奶➞莴苣”)并不等于可信度(“莴苣➞豆奶”)。
+
+前文也提到过，一条规则P➞H的可信度定义为support(P | H)/support(P)，其中“|”表示P和H的并集。可见可信度的计算是基于项集的支持度的。
+
+图4给出了从项集{0,1,2,3}产生的所有关联规则，其中阴影区域给出的是低可信度的规则。可以发现如果{0,1,2}➞{3}是一条低可信度规则，那么所有其他以3作为后件（箭头右部包含3）的规则均为低可信度的。
+
+![关联规则网格示意图](关联规则网格示意图.png)
+
+可以观察到,**如果某条规则并不满足最小可信度要求，那么该规则的所有子集也不会满足最小可信度要求**。以图4为例，假设规则{0,1,2} ➞ {3}并不满足最小可信度要求，那么就知道任何左部为{0,1,2}子集的规则也不会满足最小可信度要求。可以利用关联规则的上述性质属性来减少需要测试的规则数目，类似于Apriori算法求解频繁项集。
+
+关联规则生成函数
+
+```python
+def generateRules(L, supportData, minConf=0.7):
+    '''
+    关联规则生成函数
+    
+    3个参数：频繁项集列表L、包含那些频繁项集支持数据的字典supportData、最小可信度阈值minConf
+    
+    '''
+    bigRuleList = []  #包含可信度的规则列表,后面可以基于可信度对它们进行排序。
+    
+    for i in range(1, len(L)): #i = 0时L[0]为单个频繁集,i表示当前遍历的频繁项集包含的元素个数。这里只获取有两个或更多元素的集合
+        for freqSet in L[i]:  # freqSet为当前遍历的频繁项集
+            H1 = [frozenset([item]) for item in freqSet] # 对每个频繁项集构建只包含单个元素集合的列表H1
+            if i > 1:
+                rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
+            else:
+                calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
+    return bigRuleList
+
+def calcConf(freqSet, H , supportData, brl, minConf=0.7):
+    '''
+    对规则进行评估。计算规则的可信度，并过滤出满足最小可信度要求的规则，最后将这个规则列表添加到主函数的bigRuleList中（通过参数brl）。
+    
+    freqSet: 为有n个元素的频率集
+    H：为频率集中的n个元素或n个元素的两两或多个组合
+    supportData: 支持集
+    brl: 用于存储>可信度minConf的关联规则
+    minConf: 最低可信度
+    
+    返回值prunedH保存规则列表的右部
+    
+    '''
+    prunedH = []
+    for conseq in H:
+        conf = supportData[freqSet] / supportData[freqSet - conseq] #p(012->3) = p(0123 |012) = p(0123)/p(012)
+        if conf >= minConf:
+            print freqSet - conseq, ' ------> ', conseq, '   conf:', conf
+            brl.append((freqSet - conseq, conseq, conf))
+            prunedH.append(conseq)
+    return prunedH
+        
+def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
+    '''
+    根据当前候选规则集H生成下一层候选规则集
+    
+    参数：频繁项集freqSet，可以出现在规则右部的元素列表H，supportData保存项集的支持度，brl保存生成的关联规则，minConf同主函数
+    
+    '''
+    m = len(H[0]) #计算H中的频繁项集大小m
+    if len(freqSet) > (m + 1):  # 查看该频繁项集是否大到可以移除大小为m的子集
+        Hmpl = aprioriGen(H, m+1) # 使用函数aprioriGen()来生成H中元素的无重复组合
+        Hmpl = calcConf(freqSet, Hmpl, supportData, brl, minConf)
+        if len(Hmpl) > 1:
+            rulesFromConseq(freqSet, Hmpl, supportData, brl, minConf)
+  
+
+>>> rules = generateRules(L, supportData, minConf=0.7)
+frozenset([1])  ------>  frozenset([3])    conf: 1.0
+frozenset([5])  ------>  frozenset([2])    conf: 1.0
+frozenset([2])  ------>  frozenset([5])    conf: 1.0
+
+>>> rules = generateRules(L, supportData, minConf=0.5)
+frozenset([3])  ------>  frozenset([1])    conf: 0.666666666667
+frozenset([1])  ------>  frozenset([3])    conf: 1.0
+frozenset([5])  ------>  frozenset([2])    conf: 1.0
+frozenset([2])  ------>  frozenset([5])    conf: 1.0
+frozenset([3])  ------>  frozenset([2])    conf: 0.666666666667
+frozenset([2])  ------>  frozenset([3])    conf: 0.666666666667
+frozenset([5])  ------>  frozenset([3])    conf: 0.666666666667
+frozenset([3])  ------>  frozenset([5])    conf: 0.666666666667
+frozenset([5])  ------>  frozenset([2, 3])    conf: 0.666666666667
+frozenset([3])  ------>  frozenset([2, 5])    conf: 0.666666666667
+frozenset([2])  ------>  frozenset([3, 5])    conf: 0.666666666667
+```
 
 
