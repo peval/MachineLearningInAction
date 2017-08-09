@@ -116,6 +116,43 @@ def generateRules(L, supportData, minConf=0.7):
                 calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
     return bigRuleList
 
+def generateRules2(L, supportData, minConf=0.7):
+    '''
+    关联规则生成函数
+    
+    3个参数：频繁项集列表L、包含那些频繁项集支持数据的字典supportData、最小可信度阈值minConf
+    
+    '''
+    bigRuleList = []  #包含可信度的规则列表,后面可以基于可信度对它们进行排序。
+    
+    for i in range(1, len(L)): #i = 0时L[0]为单个频繁集,i表示当前遍历的频繁项集包含的元素个数。这里只获取有两个或更多元素的集合
+        for freqSet in L[i]:  # freqSet为当前遍历的频繁项集
+            H1 = [frozenset([item]) for item in freqSet] # 对每个频繁项集构建只包含单个元素集合的列表H1
+            if i > 1:
+                H1 = calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
+                rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
+            else:
+                calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
+    return bigRuleList
+
+
+def generateRules3(L, supportData, minConf=0.7):
+    '''
+    关联规则生成函数
+    
+    3个参数：频繁项集列表L、包含那些频繁项集支持数据的字典supportData、最小可信度阈值minConf
+    
+    '''
+    bigRuleList = []  #包含可信度的规则列表,后面可以基于可信度对它们进行排序。
+    
+    for i in range(1, len(L)): #i = 0时L[0]为单个频繁集,i表示当前遍历的频繁项集包含的元素个数。这里只获取有两个或更多元素的集合
+        for freqSet in L[i]:  # freqSet为当前遍历的频繁项集
+            H1 = [frozenset([item]) for item in freqSet] # 对每个频繁项集构建只包含单个元素集合的列表H1
+            rulesFromConseq2(freqSet, H1, supportData, bigRuleList, minConf)
+    return bigRuleList
+
+
+
 def calcConf(freqSet, H , supportData, brl, minConf=0.7):
     '''
     对规则进行评估。计算规则的可信度，并过滤出满足最小可信度要求的规则，最后将这个规则列表添加到主函数的bigRuleList中（通过参数brl）。
@@ -152,6 +189,22 @@ def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
         if len(Hmpl) > 1:
             rulesFromConseq(freqSet, Hmpl, supportData, brl, minConf)
     
+def rulesFromConseq2(freqSet, H, supportData, brl, minConf=0.7):
+    '''
+    根据当前候选规则集H生成下一层候选规则集
+    
+    参数：频繁项集freqSet，可以出现在规则右部的元素列表H，supportData保存项集的支持度，brl保存生成的关联规则，minConf同主函数
+    
+    '''
+    m = len(H[0]) #计算H中的频繁项集大小m
+    while len(freqSet) > m:  # 判断长度 > m，这时即可求H的可信度
+        H = calcConf(freqSet, H, supportData, brl, minConf)
+        
+        if len(H) > 1: #判断求完可信度后是否还有可信度大于阈值的项用来生成下一层H
+            H = aprioriGen(H, m+1) # 使用函数aprioriGen()来生成H中元素的无重复组合
+            m += 1
+        else: # 不能继续生成下一层候选关联规则，提前退出循环
+            break
     
 
 if __name__ == '__main__':
@@ -164,6 +217,12 @@ if __name__ == '__main__':
     
     L, supportData = apriori(dataSet)
     
-    rules = generateRules(L, supportData, minConf=0.5)
+    #rules = generateRules(L, supportData, minConf=0.5)
+    #rules = generateRules(L, supportData, minConf=0.7)
     
+    #rules = generateRules2(L, supportData, minConf=0.5)
+    #rules = generateRules2(L, supportData, minConf=0.7)
+    
+    
+    rules = generateRules3(L, supportData, minConf=0.7)
    

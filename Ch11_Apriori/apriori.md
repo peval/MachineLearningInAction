@@ -244,6 +244,8 @@ def apriori(dataSet, minSupport=0.5):
 
 ![关联规则网格示意图](关联规则网格示意图.png)
 
+图4 从项集{0,1,2,3}产生的所有关联规则
+
 可以观察到,**如果某条规则并不满足最小可信度要求，那么该规则的所有子集也不会满足最小可信度要求**。以图4为例，假设规则{0,1,2} ➞ {3}并不满足最小可信度要求，那么就知道任何左部为{0,1,2}子集的规则也不会满足最小可信度要求。可以利用关联规则的上述性质属性来减少需要测试的规则数目，类似于Apriori算法求解频繁项集。
 
 关联规则生成函数
@@ -323,4 +325,119 @@ frozenset([3])  ------>  frozenset([2, 5])    conf: 0.666666666667
 frozenset([2])  ------>  frozenset([3, 5])    conf: 0.666666666667
 ```
 
+# 3.4 关于rulesFromConseq()函数的问题
 
+# 3.4.1 问题
+
+频繁项集L的值前面提到过。我们在其中计算通过{2, 3, 5}生成的关联规则，可以发现关联规则{3, 5}➞{2}和{2, 3}➞{5}的可信度都应该为1.0的，因而也应该包括在当minConf = 0.7时的rules中——但是这在前面的运行结果中并没有体现出来。minConf = 0.5时也是一样，{3, 5}➞{2}的可信度为1.0，{2, 5}➞{3}的可信度为2/3，{2, 3}➞{5}的可信度为1.0，也没有体现在rules中。
+
+通过分析程序代码，我们可以发现：
+
+- 当i = 1时，generateRules()函数直接调用了calcConf()函数直接计算其可信度，因为这时L[1]中的频繁项集均包含两个元素，可以直接生成和判断候选关联规则。比如L[1]中的{2, 3}，生成的候选关联规则为{2}➞{3}、{3}➞{2}，这样就可以了。
+- 当i > 1时，generateRules()函数调用了rulesFromConseq()函数，这时L[i]中至少包含3个元素，如{2, 3, 5}，对候选关联规则的生成和判断的过程需要分层进行（图4）。这里，将初始的H1（表示初始关联规则的右部，即箭头右边的部分）作为参数传递给了rulesFromConseq()函数。
+
+例如，对于频繁项集{a, b, c, …}，H1的值为[a, b, c, …]（代码中实际为frozenset类型）。如果将H1带入计算可信度的calcConf()函数，在函数中会依次计算关联规则{b, c, d, …}➞{a}、{a, c, d, …}➞{b}、{a, b, d, …}➞{c}……的支持度，并保存支持度大于最小支持度的关联规则，并保存这些规则的右部（prunedH，即对H的过滤，删除支持度过小的关联规则）。
+
+当i > 1时没有直接调用calcConf()函数计算通过H1生成的规则集。在rulesFromConseq()函数中，首先获得当前H的元素数m = len(H[0])（记当前的H为$H_m$）。当$H_m$可以进一步合并为m+1元素数的集合$H_{m+1}$时（判断条件：len(freqSet) > (m + 1)），依次：
+
+- 生成$H_{m+1}$：Hmpl = aprioriGen(H, m + 1)
+- 计算$H_{m+1}$的可信度：Hmpl = calcConf(freqSet, Hmpl, …)
+- 递归计算由$H_{m+1}$生成的关联规则：rulesFromConseq(freqSet, Hmpl, …)
+
+所以这里的问题是，在i>1时，rulesFromConseq()函数中并没有调用calcConf()函数计算$H_1$的可信度，而是直接由H1生成H2，从H2开始计算关联规则——于是由元素数>3的频繁项集生成的{a, b, c, …}➞{x}形式的关联规则（图4中的第2层）均缺失了。由于代码示例数据中的对H1的剪枝prunedH没有删除任何元素，结果只是“巧合”地缺失了一层。正常情况下如果没有对H1进行过滤，直接生成H2，将给下一层带入错误的结果（如图4中的012➞3会被错误得留下来）。
+
+# 3.4.2 对问题代码的修改
+
+在i>1时，将对H1调用calcConf()的过程加上就可以了。比如可以这样：
+
+```python
+def generateRules2(L, supportData, minConf=0.7):
+    '''
+    关联规则生成函数
+    
+    3个参数：频繁项集列表L、包含那些频繁项集支持数据的字典supportData、最小可信度阈值minConf
+    
+    '''
+    bigRuleList = []  #包含可信度的规则列表,后面可以基于可信度对它们进行排序。
+    
+    for i in range(1, len(L)): #i = 0时L[0]为单个频繁集,i表示当前遍历的频繁项集包含的元素个数。这里只获取有两个或更多元素的集合
+        for freqSet in L[i]:  # freqSet为当前遍历的频繁项集
+            H1 = [frozenset([item]) for item in freqSet] # 对每个频繁项集构建只包含单个元素集合的列表H1
+            if i > 1:
+                H1 = calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
+                rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
+            else:
+                calcConf(freqSet, H1, supportData, bigRuleList, minConf) #只有两个元素的集合
+    return bigRuleList
+
+
+>>> rules = generateRules2(L, supportData, minConf=0.7)
+frozenset([1])  ------>  frozenset([3])    conf: 1.0
+frozenset([5])  ------>  frozenset([2])    conf: 1.0
+frozenset([2])  ------>  frozenset([5])    conf: 1.0
+frozenset([3, 5])  ------>  frozenset([2])    conf: 1.0 #比之前多了以下两条规则
+frozenset([2, 3])  ------>  frozenset([5])    conf: 1.0
+```
+
+这里就只需要修改generateRules()函数。这样实际运行效果中，刚才丢失的那几个关联规则就都出来了。
+
+进一步修改：当i=1时的else部分并没有独特的逻辑，这个if语句可以合并，然后再修改rulesFromConseq()函数，保证其会调用calcConf(freqSet, H1, …)：
+
+进一步修改：消除rulesFromConseq2()函数中的递归项。这个递归纯粹是偷懒的结果，没有简化任何逻辑和增加任何可读性，可以直接用一个循环代替：
+
+```python
+def generateRules3(L, supportData, minConf=0.7):
+    '''
+    关联规则生成函数
+    
+    3个参数：频繁项集列表L、包含那些频繁项集支持数据的字典supportData、最小可信度阈值minConf
+    
+    '''
+    bigRuleList = []  #包含可信度的规则列表,后面可以基于可信度对它们进行排序。
+    
+    for i in range(1, len(L)): #i = 0时L[0]为单个频繁集,i表示当前遍历的频繁项集包含的元素个数。这里只获取有两个或更多元素的集合
+        for freqSet in L[i]:  # freqSet为当前遍历的频繁项集
+            H1 = [frozenset([item]) for item in freqSet] # 对每个频繁项集构建只包含单个元素集合的列表H1
+            rulesFromConseq2(freqSet, H1, supportData, bigRuleList, minConf)
+    return bigRuleList
+
+def rulesFromConseq2(freqSet, H, supportData, brl, minConf=0.7):
+    '''
+    根据当前候选规则集H生成下一层候选规则集
+    
+    参数：频繁项集freqSet，可以出现在规则右部的元素列表H，supportData保存项集的支持度，brl保存生成的关联规则，minConf同主函数
+    
+    '''
+    m = len(H[0]) #计算H中的频繁项集大小m
+    while len(freqSet) > m:  # 判断长度 > m，这时即可求H的可信度
+        H = calcConf(freqSet, H, supportData, brl, minConf)
+        
+        if len(H) > 1: #判断求完可信度后是否还有可信度大于阈值的项用来生成下一层H
+            H = aprioriGen(H, m+1) # 使用函数aprioriGen()来生成H中元素的无重复组合
+            m += 1
+        else: # 不能继续生成下一层候选关联规则，提前退出循环
+            break
+
+>>> rules = generateRules3(L, supportData, minConf=0.7)
+frozenset([1])  ------>  frozenset([3])    conf: 1.0
+frozenset([5])  ------>  frozenset([2])    conf: 1.0
+frozenset([2])  ------>  frozenset([5])    conf: 1.0
+frozenset([3, 5])  ------>  frozenset([2])    conf: 1.0
+frozenset([2, 3])  ------>  frozenset([5])    conf: 1.0
+```
+
+另一个主要的区别是去掉了多余的Hmpl变量。运行的结果和generateRules2相同。
+
+# 4  小结
+
+关联分析是用于发现大数据集中元素间有趣关系的一个工具集，可以采用两种方式来量化这些有趣的关系。第一种方式是使用频繁项集，它会给出经常在一起出现的元素项。第二种方式是关联规则，每条关联规则意味着元素项之间的“如果……那么”关系。
+
+发现元素项间不同的组合是个十分耗时的任务，不可避免需要大量昂贵的计算资源，这就需要一些更智能的方法在合理的时间范围内找到频繁项集。能够实现这一目标的一个方法是Apriori算法，它使用Apriori原理来减少在数据库上进行检查的集合的数目。Apriori原理是说如果一个元素项是不频繁的，那么那些包含该元素的超集也是不频繁的。Apriori算法从单元素项集开始，通过组合满足最小支持度要求的项集来形成更大的集合。支持度用来度量一个集合在原始数据中出现的频率。
+
+关联分析可以用在许多不同物品上。商店中的商品以及网站的访问页面是其中比较常见的例子。
+
+每次增加频繁项集的大小，Apriori算法都会重新扫描整个数据集。当数据集很大时，这会显著降低频繁项集发现的速度。下一章会介绍FP-growth算法，和Apriori算法相比，该算法**只需要对数据库进行两次遍历，能够显著加快发现频繁项集的速度**。
+
+
+
+至此，一个完整的Apriori算法就完成了。
