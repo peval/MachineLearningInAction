@@ -463,9 +463,3 @@ FP-growth算法还有一个map-reduce版本的实现，它也很不错，可以�
 - FP-growth算法：H. Li, Y. Wang, D. Zhang, M. Zhang, and E. Chang, “PFP: Parallel FP-Growth for Query Recommendation,” RecSys 2008, Proceedings of the 2008 ACM Conference on Recommender Systems; http://portal.acm.org/citation.cfm?id=1454027.
 - kosarak：Hungarian online news portal clickstream retrieved July 11, 2011; from Frequent Itemset Mining Dataset Repository, http://fimi.ua.ac.be/data/, donated by Ferenc Bodon.
 
-注：
-
-- 获取kosarak.dat文件，请参考文章目录：《机器学习实战》学习笔记。
-- 如果需要在Python源代码中插入Unicode字符（汉字）注释最好在文件第一行添加“# coding=utf-8”。
-
-
