@@ -433,7 +433,7 @@ conditional tree for:  set(['x'])
 
 图中红色加粗的部分即实际添加到freqItemList中的频繁项集。
 
-#3.4 封装
+# 3.4 封装
 
 至此，完整的FP-growth算法已经可以运行。封装整个过程如下：
 
